@@ -1,72 +1,295 @@
-(function () {
-  const sections = Array.from(document.querySelectorAll('.timeline-section'));
-  const labels = Array.from(document.querySelectorAll('#timeline-labels li'));
-  const progressEl = document.getElementById('timeline-progress');
-  const contentEl = document.getElementById('timeline-content');
-  const lineEl = document.querySelector('.timeline-line');
+// ----------------------------------------------------
+// PASTE YOUR UPDATED GOOGLE APPS SCRIPT URL HERE
+// ----------------------------------------------------
+const API_URL = "https://script.google.com/macros/s/AKfycbxe4e9qXtRv5caC_oMtcwZsdrkJc4oQ8aNrZWBvMAkOlFAtcLHUKyuhQ66uNLPz8wNE/exec";
+// ----------------------------------------------------
 
-  const getOffsets = () => {
-    const rect = contentEl.getBoundingClientRect();
-    const scrollTop = window.scrollY || window.pageYOffset;
-    const start = rect.top + scrollTop;
-    const end = start + rect.height - window.innerHeight * 0.2;
-    return { start, end };
-  };
+let appData = {};
 
-  const updateProgress = () => {
-    if (!progressEl || !contentEl) return;
-    if (lineEl) {
-      lineEl.style.height = `${contentEl.scrollHeight}px`;
-    }
-    const { start, end } = getOffsets();
-    const scroll = window.scrollY || window.pageYOffset;
-    const clamped = Math.min(Math.max(scroll - start, 0), end - start);
-    const percent = (clamped / Math.max(end - start, 1)) * 100;
-    progressEl.style.height = `${percent}%`;
-  };
-
-  const activateSection = (id) => {
-    sections.forEach((section) => {
-      section.classList.toggle('active', section.id === id);
-    });
-    labels.forEach((label) => {
-      label.classList.toggle('active', label.dataset.target === id);
-    });
-  };
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          activateSection(entry.target.id);
-        }
-      });
-    },
-    {
-      threshold: 0.45,
-    }
-  );
-
-  sections.forEach((section) => observer.observe(section));
-
-  labels.forEach((label) => {
-    label.addEventListener('click', () => {
-      const target = document.getElementById(label.dataset.target);
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Check for Cached View
+  const cachedView = localStorage.getItem('currentView') || 'home';
+  updateNavState(cachedView);
+  
+  showToast("Connecting...");
+  
+  // 2. Fetch Data
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      if(data.status === 'success') {
+        appData = data;
+        showToast("Loaded!");
+        
+        renderFooter(data.contacts);
+        renderView(cachedView); // Render based on cache
+        
+        // Restore Scroll
+        const scroll = localStorage.getItem('scrollPos');
+        if(scroll) setTimeout(() => window.scrollTo(0, parseInt(scroll)), 50);
+      } else {
+        throw new Error(data.message);
       }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast("Offline / Error");
+      document.getElementById('app-content').innerHTML = "<p style='text-align:center'>Unable to load content. Please check connection.</p>";
     });
-  });
+});
 
-  let resizeTimeout;
-  const handleResize = () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => updateProgress(), 200);
-  };
+// Save scroll before leaving/refreshing
+window.addEventListener('beforeunload', () => {
+  localStorage.setItem('scrollPos', window.scrollY);
+});
 
-  window.addEventListener('scroll', updateProgress, { passive: true });
-  window.addEventListener('resize', handleResize, { passive: true });
-  document.addEventListener('DOMContentLoaded', () => {
-    updateProgress();
+// --- NAVIGATION ---
+window.switchView = function(viewName) {
+  localStorage.setItem('currentView', viewName);
+  localStorage.setItem('scrollPos', 0); // Reset scroll on manual switch
+  updateNavState(viewName);
+  renderView(viewName);
+  window.scrollTo(0, 0);
+}
+
+function updateNavState(viewName) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if(viewName === 'home') document.getElementById('nav-home').classList.add('active');
+  if(viewName === 'members') document.getElementById('nav-team').classList.add('active');
+}
+
+function renderView(viewName) {
+  const container = document.getElementById('app-content');
+  container.innerHTML = ''; // Clear current
+  
+  if(!appData.content) return; // Wait for data
+
+  if(viewName === 'home') renderHome(container);
+  else renderTeam(container);
+}
+
+// --- RENDERERS ---
+
+function renderHome(container) {
+  let html = '';
+  
+  // Find Advocacy Video
+  const videoItem = appData.content.find(i => i.type && i.type.toLowerCase() === 'advocacy');
+  const cards = appData.content.filter(i => !i.type || i.type.toLowerCase() !== 'advocacy');
+
+  // Hero
+  if(videoItem) {
+    const vidUrl = getMediaHtml(videoItem.url, 'video', false);
+    html += `
+      <div class="hero-section">
+        <h2 class="hero-title">${videoItem.title}</h2>
+        <div class="hero-desc">${videoItem.desc}</div>
+        <div class="hero-video">${vidUrl}</div>
+      </div>
+      <div class="section-bar"></div>
+      <h2 class="section-title">Awareness Materials</h2>
+    `;
+  }
+
+  // Grid
+  html += `<div class="grid">`;
+  cards.forEach(item => {
+    const type = item.type ? item.type.toLowerCase() : 'image';
+    const media = getMediaHtml(item.url, type, false);
+    const overlay = type !== 'video' ? `<div class="img-overlay"></div>` : '';
+    // Encode data
+    const itemData = encodeData(item);
+
+    html += `
+      <div class="card">
+        <div class="card-media">
+          ${media}
+          ${overlay}
+        </div>
+        <div class="card-content">
+          <h3 class="card-title" onclick='openModal(${itemData})'>${item.title}</h3>
+          <div class="card-desc">${item.desc}</div>
+          <button class="btn-details" onclick='openModal(${itemData})'>Read Details</button>
+        </div>
+      </div>
+    `;
   });
-})();
+  html += `</div>`;
+  
+  container.innerHTML = html;
+  
+  // Re-attach clicks (simplified for innerHTML usage)
+  const overlays = container.querySelectorAll('.img-overlay');
+  overlays.forEach(el => {
+    el.onclick = function() {
+      // Find parent card and trigger button click logic equivalent
+      const btn = this.parentElement.nextElementSibling.querySelector('button');
+      btn.click();
+    };
+  });
+}
+
+function renderTeam(container) {
+  let html = '';
+  
+  const instructor = appData.profiles.find(p => p.role.toLowerCase() === 'instructor');
+  const members = appData.profiles.filter(p => p.role.toLowerCase() !== 'instructor');
+
+  // Instructor
+  if(instructor) {
+    const iImg = getDriveImg(instructor.imgUrl);
+    const iData = encodeData(instructor);
+    html += `
+      <div class="instructor-card" onclick='openProfile(${iData})'>
+        <img src="${iImg}" class="inst-img">
+        <h3 class="inst-name">${instructor.name}</h3>
+        <div class="inst-role">${instructor.program}</div>
+        <p style="color:#666; font-size:0.9rem;">${instructor.shortDesc}</p>
+        <button class="btn-details" style="margin-top:10px;">View Profile</button>
+      </div>
+      <div class="section-bar"></div>
+      <h2 class="section-title">Our Team</h2>
+    `;
+  }
+
+  // Members Grid
+  html += `<div class="member-grid">`;
+  members.forEach(m => {
+    const mImg = getDriveImg(m.imgUrl);
+    const mData = encodeData(m);
+    html += `
+      <div class="member-card" onclick='openProfile(${mData})'>
+        <img src="${mImg}" class="mem-img">
+        <h3 class="mem-name">${m.name}</h3>
+        <div class="mem-program">${m.role}</div>
+        <button class="btn-details" style="margin-top:auto;">Profile</button>
+      </div>
+    `;
+  });
+  html += `</div>`;
+
+  container.innerHTML = html;
+}
+
+function renderFooter(contacts) {
+  const f = document.getElementById('footer-target');
+  let h = '';
+  if(contacts) {
+    contacts.forEach(c => {
+      const link = c.link ? `<br><a href="${c.link}" target="_blank">Open Link</a>` : '';
+      h += `
+        <div class="footer-col">
+          <h4>${c.title}</h4>
+          <p>${c.desc.replace(/\n/g, '<br>')}</p>
+          ${link}
+        </div>`;
+    });
+  }
+  f.innerHTML = h;
+}
+
+// --- MODALS ---
+
+window.openModal = function(data) {
+  const m = document.getElementById('modal');
+  document.getElementById('m-title').innerText = data.title;
+  document.getElementById('m-desc').innerText = data.desc;
+  document.getElementById('m-media').innerHTML = getMediaHtml(data.url, data.type, true);
+  
+  const refBox = document.getElementById('m-ref-box');
+  if(data.ref) {
+    refBox.style.display = 'block';
+    document.getElementById('m-ref-content').innerHTML = data.ref.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+  } else {
+    refBox.style.display = 'none';
+  }
+  
+  m.style.display = 'flex';
+  setTimeout(() => m.classList.add('active'), 10);
+}
+
+window.openProfile = function(data) {
+  const m = document.getElementById('profile-modal');
+  document.getElementById('p-name').innerText = data.name;
+  document.getElementById('p-role').innerText = data.role + (data.program ? " | " + data.program : "");
+  document.getElementById('p-bio').innerText = data.fullBio || data.shortDesc;
+  document.getElementById('p-img').src = getDriveImg(data.imgUrl);
+  
+  const fb = document.getElementById('p-fb');
+  if(data.fbLink) { fb.style.display = 'inline-block'; fb.href = data.fbLink; }
+  else { fb.style.display = 'none'; }
+  
+  m.style.display = 'flex';
+  setTimeout(() => m.classList.add('active'), 10);
+}
+
+// Close Logic
+document.querySelectorAll('.close-btn').forEach(btn => {
+  btn.onclick = function() {
+    const m = this.closest('.modal');
+    m.classList.remove('active');
+    setTimeout(() => {
+      m.style.display = 'none';
+      if(m.id === 'modal') document.getElementById('m-media').innerHTML = ''; // Stop video
+    }, 300);
+  }
+});
+
+// --- HELPERS ---
+
+function encodeData(obj) {
+  // Safe stringify for HTML attributes
+  return JSON.stringify(obj).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+}
+
+function getDriveImg(url) {
+  if(!url) return 'https://via.placeholder.com/150';
+  const match = url.match(/[-\w]{25,}/);
+  return match ? `https://drive.google.com/uc?export=view&id=${match[0]}` : url;
+}
+
+function getMediaHtml(url, type, autoplay) {
+  if (!url) return '';
+  type = type ? type.toLowerCase() : 'image';
+  
+  // YouTube
+  if (url.includes("youtube") || url.includes("youtu.be")) {
+    const id = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/))([^&?]*)/);
+    if(id) {
+       let src = `https://www.youtube.com/embed/${id[1]}?modestbranding=1&rel=0`;
+       if(autoplay) src += "&autoplay=1";
+       return `<iframe src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    }
+  }
+  // Drive Video
+  if (type === 'video' || type === 'advocacy') {
+    const match = url.match(/[-\w]{25,}/);
+    if(match) {
+       const src = `https://drive.google.com/file/d/${match[0]}/preview`;
+       return `<iframe src="${src}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    }
+  }
+  // Image
+  const imgUrl = getDriveImg(url);
+  return `<img src="${imgUrl}">`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// Install Prompt
+let deferredPrompt;
+const installBtn = document.getElementById('install-btn');
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'block';
+});
+installBtn.addEventListener('click', () => {
+  installBtn.style.display = 'none';
+  deferredPrompt.prompt();
+});
