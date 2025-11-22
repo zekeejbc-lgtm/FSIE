@@ -1,210 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Intellectual and Developmental Disability (IDD) Advocacy</title>
-    <meta
-      name="description"
-      content="A student-built advocacy site about Intellectual and Developmental Disability (IDD) for Foundations for Special and Inclusive Education."
-    />
-    <style>
-      <?!= include('styles'); ?>
-    </style>
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="header-inner">
-        <div class="logo-block">
-          <!-- Replace this placeholder image with the official school logo URL -->
-          <img
-            src="https://placehold.co/140x140?text=Logo"
-            alt="School logo placeholder"
-            class="logo"
-          />
-        </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>IDD Awareness USeP</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#781d22">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">Initializing...</div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <img src="icon-192.png" alt="Logo">
         <div class="header-text">
-          <p class="school-name">[Insert School Name Here]</p>
-          <p class="course-name">Foundations for Special and Inclusive Education</p>
-          <h1 class="project-title">
-            Intellectual and Developmental Disability (IDD) Awareness Web App
-          </h1>
-          <p class="student-name">EZEQUIEL JOHN B. CRISOSTOMO, LPT, MEd.</p>
+          <h1 class="school-name">USeP Tagum-Mabini</h1>
+          <p class="course-name">Special & Inclusive Education</p>
         </div>
       </div>
-    </header>
+      
+      <!-- Navigation -->
+      <nav class="nav-group">
+        <button id="nav-home" class="nav-btn active" onclick="switchView('home')">Home</button>
+        <button id="nav-team" class="nav-btn" onclick="switchView('members')">Our Team</button>
+      </nav>
+    </div>
+  </header>
 
-    <main>
-      <section class="video-section" id="advocacy-video">
-        <div class="section-heading">
-          <p class="eyebrow">Advocacy Feature</p>
-          <h2>Our Advocacy Video on Intellectual and Developmental Disability (IDD)</h2>
-          <p class="section-description">
-            This student-made video highlights key ideas about IDD and why inclusive education
-            matters. Watch it to learn how we can work together to support learners with
-            diverse needs.
-          </p>
+  <!-- Install Button -->
+  <button id="install-btn" class="install-btn" style="display:none;">
+    <span>⬇️</span> Install App
+  </button>
+
+  <!-- MAIN DYNAMIC CONTENT -->
+  <main id="app-content">
+    <div class="loading">Loading content...</div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-grid" id="footer-target"></div>
+    <div class="copyright">
+      <div style="color: var(--accent); font-weight:800; margin-bottom:8px; letter-spacing:1px;">INTELLECTUAL AND DEVELOPMENTAL DISABILITY</div>
+      Group 1 - Bachelor of Secondary Education major in Filipino 1st Year 1SF students
+    </div>
+  </footer>
+
+  <!-- CONTENT MODAL (For Articles/Images) -->
+  <div id="modal" class="modal">
+    <div class="modal-box">
+      <button class="close-btn" id="close-modal">&times;</button>
+      <div class="modal-media-area" id="m-media"></div>
+      <div class="modal-body">
+        <h2 class="modal-title" id="m-title"></h2>
+        <div class="modal-desc" id="m-desc"></div>
+        <div id="m-ref-box" class="modal-ref">
+          <h5>References</h5>
+          <div class="ref-content" id="m-ref-content"></div>
         </div>
-        <div class="video-frame">
-          <!-- Paste the Google Drive preview/embed link for the advocacy video in the src below -->
-          <iframe
-            src="https://drive.google.com/file/d/placeholder/preview"
-            title="IDD advocacy video placeholder"
-            allow="autoplay; fullscreen"
-            allowfullscreen
-          ></iframe>
-        </div>
-      </section>
+      </div>
+    </div>
+  </div>
 
-      <section class="timeline" aria-label="IDD information timeline">
-        <div class="timeline-grid">
-          <aside class="timeline-rail" aria-hidden="true">
-            <div class="sticky-rail">
-              <div class="timeline-line">
-                <div class="timeline-progress" id="timeline-progress"></div>
-              </div>
-              <ul class="timeline-labels" id="timeline-labels">
-                <li data-target="what-is-idd" class="active">What is IDD?</li>
-                <li data-target="common-characteristics">Common Characteristics and Needs</li>
-                <li data-target="inclusive-strategies">Inclusive Education and Classroom Strategies</li>
-                <li data-target="advocacy-goals">Our Advocacy Goals</li>
-              </ul>
-            </div>
-          </aside>
+  <!-- PROFILE MODAL (For Team Members) -->
+  <div id="profile-modal" class="modal">
+    <div class="modal-box profile-box">
+      <button class="close-btn" id="close-profile">&times;</button>
+      <img id="p-img" class="modal-profile-img" src="">
+      <h2 id="p-name" class="p-name"></h2>
+      <p id="p-role" class="p-role"></p>
+      <div id="p-bio" class="modal-desc"></div>
+      <a id="p-fb" href="#" target="_blank" class="fb-btn">Visit Facebook Profile</a>
+    </div>
+  </div>
 
-          <div class="timeline-content" id="timeline-content">
-            <article class="timeline-section" id="what-is-idd" data-label="What is IDD?">
-              <div class="marker" aria-hidden="true"></div>
-              <div class="timeline-card">
-                <p class="eyebrow">Understanding the Basics</p>
-                <h3>What is IDD?</h3>
-                <p>
-                  Intellectual and Developmental Disability (IDD) refers to differences that
-                  affect a person’s learning, reasoning, and everyday life skills from an early
-                  age. People with IDD are lifelong learners who benefit from supportive
-                  environments that build on their strengths.
-                  <!-- Customize this description with your own classroom language. -->
-                </p>
-                <div class="card-media-grid">
-                  <img
-                    src="https://placehold.co/400x260?text=IDD+Understanding"
-                    alt="Illustration representing understanding IDD"
-                  />
-                  <img
-                    src="https://placehold.co/400x260?text=Community+Support"
-                    alt="Illustration of community support"
-                  />
-                </div>
-              </div>
-            </article>
-
-            <article
-              class="timeline-section"
-              id="common-characteristics"
-              data-label="Common Characteristics and Needs"
-            >
-              <div class="marker" aria-hidden="true"></div>
-              <div class="timeline-card">
-                <p class="eyebrow">Strengths and Supports</p>
-                <h3>Common Characteristics and Needs</h3>
-                <p>
-                  Many learners with IDD thrive with predictable routines, clear instructions,
-                  and patient guidance. They may experience challenges in communication or
-                  problem-solving, but they also bring creativity, loyalty, and unique
-                  perspectives to the classroom.
-                  <!-- Update these examples to reflect the points you want to emphasize. -->
-                </p>
-                <ul class="checklist">
-                  <li>Respond well to visual cues and step-by-step directions.</li>
-                  <li>Benefit from hands-on activities and real-life examples.</li>
-                  <li>Need time to process information and practice skills.</li>
-                  <li>Flourish when classmates show encouragement and respect.</li>
-                </ul>
-                <div class="card-media-grid single">
-                  <img
-                    src="https://placehold.co/500x300?text=Inclusive+Classroom"
-                    alt="Students in an inclusive classroom working together"
-                  />
-                </div>
-              </div>
-            </article>
-
-            <article
-              class="timeline-section"
-              id="inclusive-strategies"
-              data-label="Inclusive Education and Classroom Strategies"
-            >
-              <div class="marker" aria-hidden="true"></div>
-              <div class="timeline-card">
-                <p class="eyebrow">Teaching for Everyone</p>
-                <h3>Inclusive Education and Classroom Strategies</h3>
-                <p>
-                  Teachers can create welcoming spaces where every learner belongs. These
-                  strategies support students with IDD while benefiting the whole class.
-                  <!-- Replace or expand the strategies below based on your lesson plan. -->
-                </p>
-                <div class="strategy-grid">
-                  <div class="strategy">
-                    <h4>Differentiated Instruction</h4>
-                    <p>Offer multiple ways to learn—videos, visuals, demonstrations, and practice.</p>
-                  </div>
-                  <div class="strategy">
-                    <h4>Visual Supports</h4>
-                    <p>Use schedules, icons, and color-coding to make steps clear.</p>
-                  </div>
-                  <div class="strategy">
-                    <h4>Peer Buddies</h4>
-                    <p>Pair students for activities that encourage friendship and collaboration.</p>
-                  </div>
-                  <div class="strategy">
-                    <h4>Predictable Routines</h4>
-                    <p>Start and end class with consistent rituals to build confidence.</p>
-                  </div>
-                </div>
-                <div class="card-media-grid single">
-                  <img
-                    src="https://placehold.co/460x280?text=Teaching+Strategies"
-                    alt="Graphic illustrating teaching strategies"
-                  />
-                </div>
-              </div>
-            </article>
-
-            <article class="timeline-section" id="advocacy-goals" data-label="Our Advocacy Goals">
-              <div class="marker" aria-hidden="true"></div>
-              <div class="timeline-card">
-                <p class="eyebrow">Call to Action</p>
-                <h3>Our Advocacy Goals</h3>
-                <p>
-                  We aim to celebrate the talents of people with IDD, encourage inclusive
-                  classrooms, and inspire our school community to speak up for accessibility and
-                  respect. Everyone can make a difference—by learning more, practicing kindness,
-                  and designing lessons that welcome all learners.
-                  <!-- Tailor this message to the specific goals of your project. -->
-                </p>
-                <div class="callout">
-                  <h4>Take Action</h4>
-                  <ul>
-                    <li>Learn about IDD and share inclusive language with friends.</li>
-                    <li>Invite classmates with diverse needs to collaborate on projects.</li>
-                    <li>Speak up for accessibility, clear instructions, and flexible classrooms.</li>
-                  </ul>
-                </div>
-                <div class="card-media-grid single">
-                  <img
-                    src="https://placehold.co/460x280?text=Advocacy+Together"
-                    alt="Group of students advocating together"
-                  />
-                </div>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <script>
-      <?!= include('script'); ?>
-    </script>
-  </body>
+  <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    }
+  </script>
+</body>
 </html>
